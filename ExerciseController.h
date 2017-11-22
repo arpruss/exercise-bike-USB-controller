@@ -1,34 +1,23 @@
-#ifndef _GAMECUBE_H
-#define _GAMECUBE_H
+#ifndef _EXERCISE_CONTROLLER_H
+#define _EXERCISE_CONTROLLER_H
 
 #ifdef USB_SERIAL
 # define SERIAL_DEBUG
 #endif
 
-#define ENABLE_GAMECUBE
 #define ENABLE_NUNCHUCK
 #define ENABLE_ELLIPTICAL
+#define ENABLE_GAMECUBE
 
 #define EEPROM_VARIABLE_INJECTION_MODE 0
 #define DEVICE_NONE     0
-#define DEVICE_GAMECUBE 1
+#define DEVICE_EXERCISE_CONTROLLER 1
 #define DEVICE_NUNCHUCK 2
 
 #define DIRECTION_SWITCH_FORWARD LOW
 #define ROTATION_DETECTOR_CHANGE_TO_MONITOR FALLING 
 
 #define ROTATION_DETECTOR_ACTIVE_STATE ((ROTATION_DETECTOR_CHANGE_TO_MONITOR == FALLING) ? LOW : HIGH)
-
-typedef struct {
-  uint16_t buttons;
-  uint8_t joystickX;
-  uint8_t joystickY;
-  uint8_t cX;
-  uint8_t cY;
-  uint8_t shoulderLeft;
-  uint8_t shoulderRight;
-  uint8_t device;
-} GameCubeData_t;
 
 typedef struct {
   int32_t speed;
@@ -39,14 +28,6 @@ typedef struct {
 void ellipticalUpdate(EllipticalData_t* data);
 void ellipticalInit(void);
 
-void nunchuckInit(void);
-uint8_t nunchuckReceiveReport(GameCubeData_t* data);
-
-void gameCubeInit(void);
-void gameCubeSendBits(uint32_t data, uint8_t bits);
-uint8_t gameCubeReceiveBits(void* data0, uint32_t bits);
-uint8_t gameCubeReceiveReport(GameCubeData_t* data, uint8_t rumble);
-uint8_t gameCubeReceiveReport(GameCubeData_t* data);
 void updateLED(void);
 
 uint8_t loadInjectionMode(void);
@@ -76,9 +57,7 @@ const uint8_t ledPinID = PB12;
 
 const uint32_t saveInjectionModeAfterMillis = 15000ul; // only save a mode if it's been used 15 seconds; this saves flash
 
-const uint32_t gcPinID = PA6;
-const uint8_t gcPin = 6;
-gpio_dev* const gcPort = GPIOA;
+const uint32_t gameCubePin = PA6;
 
 uint32_t injectionMode = 0;
 uint32_t savedInjectionMode = 0;
@@ -100,8 +79,8 @@ const uint16_t maskZ = 0x1000;
 const uint16_t maskShoulderRight = 0x2000;
 const uint16_t maskShoulderLeft = 0x4000;
 
-const uint8_t shoulderThreshold = 1;
-const uint8_t directionThreshold = 80;
+const uint8_t shoulderThreshold = 4;
+const uint8_t directionThreshold = 4*80;
 const uint16_t buttonMasks[] = { maskA, maskB, maskX, maskY, maskStart, maskDLeft, maskDRight, maskDDown, maskDUp, maskZ, maskShoulderRight, maskShoulderLeft };
 const int numberOfHardButtons = sizeof(buttonMasks)/sizeof(*buttonMasks);
 const uint16_t virtualShoulderRightPartial = numberOfHardButtons;
@@ -119,8 +98,8 @@ const int numberOfButtons = numberOfHardButtons+6;
 #define MOUSE_RELATIVE 'm'
 #define CLICK 'c'
 
-typedef void (*GameCubeDataProcessor_t)(const GameCubeData_t* data);
-typedef void (*EllipticalProcessor_t)(const GameCubeData_t* data, const EllipticalData_t* elliptical, int32_t multiplier);
+typedef void (*GameControllerDataProcessor_t)(const GameControllerData_t* data);
+typedef void (*EllipticalProcessor_t)(const GameControllerData_t* data, const EllipticalData_t* elliptical, int32_t multiplier);
 
 typedef struct {
   char mode;
@@ -132,23 +111,23 @@ typedef struct {
       int16_t x;
       int16_t y;
     } mouseRelative;
-    GameCubeDataProcessor_t processor;
+    GameControllerDataProcessor_t processor;
   } value;
 } InjectedButton_t;
 
 typedef struct {
   InjectedButton_t const * buttons;
-  GameCubeDataProcessor_t stick;
+  GameControllerDataProcessor_t stick;
   EllipticalProcessor_t elliptical;
   int32_t ellipticalMultiplier; // 64 = default speed ; higher is faster
 } Injector_t;
 
 #ifndef SERIAL_DEBUG
 
-void joystickNoShoulder(const GameCubeData_t* data);
-void joystickDualShoulder(const GameCubeData_t* data);
-void joystickUnifiedShoulder(const GameCubeData_t* data);
-void ellipticalSliders(const GameCubeData_t* data, const EllipticalData_t* ellipticalP, int32_t multiplier);
+void joystickNoShoulder(const GameControllerData_t* data);
+void joystickDualShoulder(const GameControllerData_t* data);
+void joystickUnifiedShoulder(const GameControllerData_t* data);
+void ellipticalSliders(const GameControllerData_t* data, const EllipticalData_t* ellipticalP, int32_t multiplier);
 
 // note: Nunchuck Z maps to A, Nunchuck C maps to B
 const InjectedButton_t defaultJoystickButtons[numberOfButtons] = {
@@ -341,5 +320,5 @@ const Injector_t injectors[] = { {NULL,NULL},{NULL,NULL},{NULL,NULL},{NULL,NULL}
 
 const uint32_t numInjectionModes = sizeof(injectors)/sizeof(*injectors);
 
-#endif // _GAMECUBE_H
+#endif // _EXERCISE_CONTROLLER_H
 

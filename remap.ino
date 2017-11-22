@@ -1,19 +1,20 @@
-#include "gamecube.h"
+#include "ExerciseController.h"
+#include "GameControllers.h"
 
 #ifndef SERIAL_DEBUG
 
 uint8_t prevButtons[numberOfButtons];
 uint8_t curButtons[numberOfButtons];
-GameCubeData_t oldData;
+GameControllerData_t oldData;
 bool didJoystick;
 const Injector_t* prevInjector = NULL;
 
-void buttonizeStick(uint8_t* buttons, uint8_t x, uint8_t y) {
-  uint8_t dx = x < 128 ? 128 - x : x - 128;
-  uint8_t dy = y < 128 ? 128 - y : y - 128;
+void buttonizeStick(uint8_t* buttons, uint16_t x, uint16_t y) {
+  uint8_t dx = x < 512 ? 512 - x : x - 512;
+  uint8_t dy = y < 512 ? 512 - y : y - 512;
   if (dx > dy) {
       if(dx > directionThreshold) {
-        if (x < 128) {
+        if (x < 512) {
           buttons[virtualLeft] = 1;
         }
         else {
@@ -22,7 +23,7 @@ void buttonizeStick(uint8_t* buttons, uint8_t x, uint8_t y) {
       }
   }
   else if (dx < dy && dy > directionThreshold) {
-    if (y < 128) {
+    if (y < 512) {
       buttons[virtualDown] = 1;
     }
     else {
@@ -31,7 +32,7 @@ void buttonizeStick(uint8_t* buttons, uint8_t x, uint8_t y) {
   }
 }
 
-void toButtonArray(uint8_t* buttons, const GameCubeData_t* data) {
+void toButtonArray(uint8_t* buttons, const GameControllerData_t* data) {
   for (int i=0; i<numberOfHardButtons; i++)
     buttons[i] = 0 != (data->buttons & buttonMasks[i]);
   buttons[virtualShoulderRightPartial] = data->shoulderRight>=shoulderThreshold;
@@ -41,19 +42,15 @@ void toButtonArray(uint8_t* buttons, const GameCubeData_t* data) {
   buttonizeStick(buttons, data->cX, data->cY); 
 }
 
-inline uint16_t remapRange(uint8_t x) {
-  return (((uint16_t)x) << 2)+1;
-}
-
-void joystickBasic(const GameCubeData_t* data) {
+void joystickBasic(const GameControllerData_t* data) {
     didJoystick = true;
-    Joystick.X(remapRange(data->joystickX));
-    Joystick.Y(remapRange(255-data->joystickY));
-    Joystick.Xrotate(remapRange(data->cX));
-    Joystick.Yrotate(remapRange(data->cY));
+    Joystick.X(data->joystickX);
+    Joystick.Y(data->joystickY);
+    Joystick.Xrotate(data->cX);
+    Joystick.Yrotate(data->cY);
 }
 
-void joystickPOV(const GameCubeData_t* data) {
+void joystickPOV(const GameControllerData_t* data) {
     didJoystick = true;
     int16_t dir = -1;
     if (data->buttons & (maskDUp | maskDRight | maskDLeft | maskDDown)) {
@@ -103,19 +100,19 @@ uint16_t getEllipticalSpeed(const EllipticalData_t* ellipticalP, int32_t multipl
     return speed;  
 }
 
-void joystickDualShoulder(const GameCubeData_t* data) {
+void joystickDualShoulder(const GameControllerData_t* data) {
     joystickBasic(data);
     joystickPOV(data);
-    Joystick.sliderLeft(remapRange(data->shoulderLeft));
-    Joystick.sliderRight(remapRange(data->shoulderRight));
+    Joystick.sliderLeft(data->shoulderLeft);
+    Joystick.sliderRight(data->shoulderRight);
 }
 
-void ellipticalSliders(const GameCubeData_t* data, const EllipticalData_t* ellipticalP, int32_t multiplier) {
+void ellipticalSliders(const GameControllerData_t* data, const EllipticalData_t* ellipticalP, int32_t multiplier) {
 #ifdef ENABLE_ELLIPTICAL
-    if (debounceDown.getRawState() && data->device == DEVICE_NUNCHUCK) {
+    if (debounceDown.getRawState() && data->device == CONTROLLER_NUNCHUCK) {
       // useful for calibration and settings for games: when downButton is pressed, joystickY controls both sliders
-      if (data->joystickY >= 128+40 || data->joystickY <= 128-40) {
-        int32_t delta = ((int32_t)data->joystickY - 128) * 49 / 10;
+      if (data->joystickY >= 512+4*40 || data->joystickY <= 512-4*40) {
+        int32_t delta = ((int32_t)data->joystickY - 512) * 49 / 40;
         uint16_t out;
         if (delta <= -511)
           out = 0;
@@ -129,7 +126,7 @@ void ellipticalSliders(const GameCubeData_t* data, const EllipticalData_t* ellip
         return;
        }
     }
-    if(data->device == DEVICE_GAMECUBE && ! ellipticalP->valid)
+    if(data->device == CONTROLLER_GAMECUBE && ! ellipticalP->valid)
       return;
     uint16_t datum = getEllipticalSpeed(ellipticalP, multiplier);
     Joystick.sliderLeft(datum);
@@ -138,22 +135,22 @@ void ellipticalSliders(const GameCubeData_t* data, const EllipticalData_t* ellip
 #endif
 }
 
-void joystickUnifiedShoulder(const GameCubeData_t* data) {
+void joystickUnifiedShoulder(const GameControllerData_t* data) {
     joystickBasic(data);
     joystickPOV(data);
     
     uint16_t datum;
-    datum = 512+(data->shoulderRight-(int16_t)data->shoulderLeft)*2;
+    datum = (1024+data->shoulderRight-data->shoulderLeft)/2;
     Joystick.sliderLeft(datum);
     Joystick.sliderRight(datum);
 }
 
-void joystickNoShoulder(const GameCubeData_t* data) {
+void joystickNoShoulder(const GameControllerData_t* data) {
     joystickBasic(data);
     joystickPOV(data);
 }
 
-void inject(const Injector_t* injector, const GameCubeData_t* curDataP, const EllipticalData_t* ellipticalP) {
+void inject(const Injector_t* injector, const GameControllerData_t* curDataP, const EllipticalData_t* ellipticalP) {
   didJoystick = false;
 
   if (prevInjector != injector) {

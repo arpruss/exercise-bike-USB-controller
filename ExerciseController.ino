@@ -8,6 +8,8 @@
 //    Put the contents of the above branch in your Arduino/Hardware folder
 //    If on Windows, run drivers\win\install_drivers.bat
 // Note: You may need to adjust permissions on some of the dll, exe and bat files.
+// Install this library:
+//    https://github.com/arpruss/GameControllersSTM32
 
 // Facing GameCube socket (as on console), flat on top:
 //    123
@@ -51,9 +53,16 @@
 #include <libmaple/usb_cdcacm.h>
 #include <libmaple/usb.h>
 #include "GameControllers.h"
+#include "ExerciseController.h"
 
 Debouncer debounceDown(downButton, HIGH);
 Debouncer debounceUp(upButton, HIGH);
+#ifdef ENABLE_NUNCHUCK
+NunchuckController nunchuck = NunchuckController();
+#endif
+#ifdef ENABLE_GAMECUBE
+GameCubeController gameCube = GameCubeController(gameCubePin);
+#endif
 
 void displayNumber(uint8_t x) {
   for (int i=0; i<numIndicators; i++, x>>=1) 
@@ -73,7 +82,6 @@ void setup() {
   
 #ifdef SERIAL_DEBUG
   Serial.begin(115200);
-  displayNumber(3);
   delay(4000);
   Serial.println("gamecube controller adapter");
 #else
@@ -83,11 +91,13 @@ void setup() {
   ellipticalInit();
 
 #ifdef ENABLE_GAMECUBE
-  gameCubeInit();
+  gameCube.begin();
 #endif
 #ifdef ENABLE_NUNCHUCK
-  nunchuckInit();
-#endif
+  displayNumber(7);
+  nunchuck.begin();
+  displayNumber(0);
+#endif  
 
   debounceDown.begin();
   debounceUp.begin();
@@ -114,7 +124,7 @@ void setup() {
 
 //uint8_t poorManPWM = 0;
 void updateLED(void) {
-  if (((validDevice != DEVICE_NONE) ^ ellipticalRotationDetector) && validUSB) {
+  if (((validDevice != CONTROLLER_NONE) ^ ellipticalRotationDetector) && validUSB) {
         gpio_write_bit(ledPort, ledPin, 0); //poorManPWM);
     //poorManPWM ^= 1;
   }
@@ -122,47 +132,48 @@ void updateLED(void) {
     gpio_write_bit(ledPort, ledPin, 1);
     //analogWrite(ledPinID, 255);
   }
-  //gpio_write_bit(ledPort, ledPin, ! (((validDevice != DEVICE_NONE) ^ ellipticalRotationDetector) && validUSB));
+  //gpio_write_bit(ledPort, ledPin, ! (((validDevice != CONTROLLER_NONE) ^ ellipticalRotationDetector) && validUSB));
 }
 
-uint8_t receiveReport(GameCubeData_t* data) {
+uint8_t receiveReport(GameControllerData_t* data) {
   uint8_t success;
 
 #ifdef ENABLE_GAMECUBE
-  if (validDevice == DEVICE_GAMECUBE || validDevice == DEVICE_NONE) {
-    success = gameCubeReceiveReport(data);
+  if (validDevice == CONTROLLER_GAMECUBE || validDevice == CONTROLLER_NONE) {
+
+\    success = gameCube.read(data);
     if (success) {
-      validDevice = DEVICE_GAMECUBE;
+      validDevice = CONTROLLER_GAMECUBE;
       return 1;
     }
-    validDevice = DEVICE_NONE;
+    validDevice = CONTROLLER_NONE;
   }
 #endif
 #ifdef ENABLE_NUNCHUCK
-  if (validDevice == DEVICE_NUNCHUCK || nunchuckDeviceInit()) {
-    success = nunchuckReceiveReport(data);
+  if (validDevice == CONTROLLER_NUNCHUCK || nunchuck.begin()) {
+    success = nunchuck.read(data);
     if (success) {
-      validDevice = DEVICE_NUNCHUCK;
+      validDevice = CONTROLLER_NUNCHUCK;
       return 1;
     }
   }
 #endif
-  validDevice = DEVICE_NONE;
+  validDevice = CONTROLLER_NONE;
 
-  data->joystickX = 128;
-  data->joystickY = 128;
-  data->cX = 128;
-  data->cY = 128;
+  data->joystickX = 515;
+  data->joystickY = 512;
+  data->cX = 512;
+  data->cY = 512;
   data->buttons = 0;
   data->shoulderLeft = 0;
   data->shoulderRight = 0;
-  data->device = DEVICE_NONE;
+  data->device = CONTROLLER_NONE;
 
   return 0;
 }
 
 void loop() {
-  GameCubeData_t data;
+  GameControllerData_t data;
   EllipticalData_t elliptical;
 
   iwdg_feed();
@@ -231,10 +242,10 @@ void loop() {
 
   receiveReport(&data);
 #ifdef SERIAL_DEBUG
-//  Serial.println("buttons1 = "+String(data.buttons));  
-//  Serial.println("joystick = "+String(data.joystickX)+","+String(data.joystickY));  
-//  Serial.println("c-stick = "+String(data.cX)+","+String(data.cY));  
-//  Serial.println("shoulders = "+String(data.shoulderLeft)+","+String(data.shoulderRight));      
+  Serial.println("buttons1 = "+String(data.buttons,HEX));  
+  Serial.println("joystick = "+String(data.joystickX)+","+String(data.joystickY));  
+  Serial.println("c-stick = "+String(data.cX)+","+String(data.cY));  
+  Serial.println("shoulders = "+String(data.shoulderLeft)+","+String(data.shoulderRight));      
 #else
 if (usb_is_connected(USBLIB) && usb_is_configured(USBLIB)) 
     inject(injectors + injectionMode, &data, &elliptical);

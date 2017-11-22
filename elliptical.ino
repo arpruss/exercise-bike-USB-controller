@@ -1,3 +1,5 @@
+#include "debouncer.h"
+
 #define MAX_SPEED_VALUE 800
 
 #define BEST_REASONABLE_RPM 188 // 120 // 188
@@ -14,8 +16,8 @@ volatile uint32_t ellipticalTriggerTime = 0;
 volatile uint32_t lastEllipticalPeriod = 0;
 volatile bool ellipticalPulsed = 0;
 
-Debounce debounceRotation(rotationDetector, LOW);
-Debounce debounceDirection(directionSwitch, DIRECTION_SWITCH_FORWARD);
+Debouncer debounceRotation(rotationDetector, LOW);
+Debouncer debounceDirection(directionSwitch, DIRECTION_SWITCH_FORWARD);
 
 void ellipticalInterrupt() {
   uint32_t t = millis();
@@ -77,7 +79,7 @@ void ellipticalUpdate(EllipticalData_t* data) {
   data->speed = ellipticalSpeed;
   data->direction = debounceDirection.getState();
 #ifdef SERIAL_DEBUG
-  Serial.println("Speed "+String(data->speed));
+//  Serial.println("Speed "+String(data->speed));
 #endif    
 #else
   data->speed = 0;
