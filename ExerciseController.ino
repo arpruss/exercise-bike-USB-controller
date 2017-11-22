@@ -50,11 +50,10 @@
 #include <libmaple/iwdg.h>
 #include <libmaple/usb_cdcacm.h>
 #include <libmaple/usb.h>
-#include "debounce.h"
-#include "gamecube.h"
+#include "GameControllers.h"
 
-Debounce debounceDown(downButton, HIGH);
-Debounce debounceUp(upButton, HIGH);
+Debouncer debounceDown(downButton, HIGH);
+Debouncer debounceUp(upButton, HIGH);
 
 void displayNumber(uint8_t x) {
   for (int i=0; i<numIndicators; i++, x>>=1) 
