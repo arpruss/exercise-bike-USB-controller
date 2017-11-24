@@ -57,30 +57,29 @@
 #include "GameControllers.h"
 #include "ExerciseController.h"
 
-Debouncer debounceDown(downButton, HIGH);
-Debouncer debounceUp(upButton, HIGH);
+DigitalOutput led(PIN_LED);
+Debouncer debounceDown(PIN_BUTTON_DOWN, HIGH);
+Debouncer debounceUp(PIN_BUTTON_UP, HIGH);
 #ifdef ENABLE_NUNCHUCK
-NunchuckController nunchuck = NunchuckController();
+NunchuckController nunchuck = NunchuckController(PIN_NUNCHUCK_SCL,PIN_NUNCHUCK_SDA);
 #endif
 #ifdef ENABLE_GAMECUBE
-GameCubeController gameCube = GameCubeController(gameCubePin);
+GameCubeController gameCube = GameCubeController(PIN_GAMECUBE);
+#endif
+#ifdef ENABLE_GAMEPORT
+GamePortController gamePort = GamePortController(PIN_GAMEPORT_X,PIN_GAMEPORT_Y,PIN_GAMEPORT_SLIDER,PIN_GAMEPORT_RX,
+    PIN_GAMEPORT_B1, PIN_GAMEPORT_B2, PIN_GAMEPORT_B3, PIN_GAMEPORT_B4);
 #endif
 
 void displayNumber(uint8_t x) {
-  for (int i=0; i<numIndicators; i++, x>>=1) 
-    analogWrite(indicatorLEDs[i], (x&1) ? (255-ledBrightnessLevels[i]) : 255);
-    //digitalWrite(indicatorLEDs[i], !(x&1));
 }
 
 void updateDisplay() {
-  displayNumber(numInjectionModes >= 16 ? injectionMode : injectionMode+1);
 }
 
 void setup() {
-  for (int i=0; i<numIndicators; i++)
-    pinMode(indicatorLEDs[i], OUTPUT);
-  pinMode(downButton, INPUT_PULLDOWN);
-  pinMode(upButton, INPUT_PULLDOWN);
+  pinMode(PIN_BUTTON_DOWN, INPUT_PULLDOWN);
+  pinMode(PIN_BUTTON_UP, INPUT_PULLDOWN);
   
 #ifdef SERIAL_DEBUG
   Serial.begin(115200);
@@ -96,15 +95,16 @@ void setup() {
   gameCube.begin();
 #endif
 #ifdef ENABLE_NUNCHUCK
-  displayNumber(7);
   nunchuck.begin();
-  displayNumber(0);
 #endif  
+#ifdef ENABLE_GAMECUBE
+  gamePort.begin();
+#endif
 
   debounceDown.begin();
   debounceUp.begin();
 
-  pinMode(ledPinID, OUTPUT);
+  pinMode(PIN_LED, OUTPUT);
 
   EEPROM8_init();
   int i = EEPROM8_getValue(EEPROM_VARIABLE_INJECTION_MODE);
@@ -124,17 +124,13 @@ void setup() {
   iwdg_init(IWDG_PRE_256, watchdogSeconds*156);
 }
 
-//uint8_t poorManPWM = 0;
 void updateLED(void) {
   if (((validDevice != CONTROLLER_NONE) ^ ellipticalRotationDetector) && validUSB) {
-        gpio_write_bit(ledPort, ledPin, 0); //poorManPWM);
-    //poorManPWM ^= 1;
+    led.write(0);
   }
   else {
-    gpio_write_bit(ledPort, ledPin, 1);
-    //analogWrite(ledPinID, 255);
+    led.write(1);
   }
-  //gpio_write_bit(ledPort, ledPin, ! (((validDevice != CONTROLLER_NONE) ^ ellipticalRotationDetector) && validUSB));
 }
 
 uint8_t receiveReport(GameControllerData_t* data) {
@@ -143,7 +139,7 @@ uint8_t receiveReport(GameControllerData_t* data) {
 #ifdef ENABLE_GAMECUBE
   if (validDevice == CONTROLLER_GAMECUBE || validDevice == CONTROLLER_NONE) {
 
-\    success = gameCube.read(data);
+    success = gameCube.read(data);
     if (success) {
       validDevice = CONTROLLER_GAMECUBE;
       return 1;
@@ -152,14 +148,24 @@ uint8_t receiveReport(GameControllerData_t* data) {
   }
 #endif
 #ifdef ENABLE_NUNCHUCK
-  if (validDevice == CONTROLLER_NUNCHUCK || nunchuck.begin()) {
+  if (validDevice == CONTROLLER_NUNCHUCK || (validDevice == CONTROLLER_NONE && nunchuck.begin()) ) {
     success = nunchuck.read(data);
     if (success) {
       validDevice = CONTROLLER_NUNCHUCK;
       return 1;
     }
+    validDevice = CONTROLLER_NONE;
   }
 #endif
+#ifdef ENABLE_GAMEPORT
+    success = gamePort.read(data);
+    if (success) {
+      validDevice = CONTROLLER_GAMEPORT;
+      return 1;
+    }
+  }
+#endif
+
   validDevice = CONTROLLER_NONE;
 
   data->joystickX = 515;
@@ -187,10 +193,9 @@ void loop() {
   iwdg_feed();
 
   if ((millis()-t0)>=5000) {
-    displayNumber(0xF);
+    // TODO: message
     injectionMode = 0;
     EEPROM8_reset();
-    updateDisplay();
     savedInjectionMode = 0;
   }
   else {

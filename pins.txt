@@ -5,6 +5,6 @@ Rotation     - PA9
 Direction    - PB1
 Nunchuck SCL - PB6
 Nunchuck SDA - PB7
-Gameport     - analog PA0, PA1, PA2, PA3; digital PA4, PA5, PA6, PA7
-Screen       - PB0, PB11, PB3, PB4, PB5, PA8
-Buttons      - PB14, PB15 // turn off debug
+Gameport     - analog PA0, PA1, PA2, PA3; digital PB3, PB4, PB5, PA8 // turn off debug
+Screen       - PB0, PB11, PA4, PA5, PA6, PA7
+Buttons      - PB14, PB15 

@@ -1,6 +1,8 @@
 #ifndef _EXERCISE_CONTROLLER_H
 #define _EXERCISE_CONTROLLER_H
 
+#include "digitalinput.h"
+
 #ifdef USB_SERIAL
 # define SERIAL_DEBUG
 #endif
@@ -8,16 +10,38 @@
 #define ENABLE_NUNCHUCK
 #define ENABLE_ELLIPTICAL
 #define ENABLE_GAMECUBE
+#define ENABLE_GAMEPORT
 
-#define EEPROM_VARIABLE_INJECTION_MODE 0
-#define DEVICE_NONE     0
-#define DEVICE_EXERCISE_CONTROLLER 1
-#define DEVICE_NUNCHUCK 2
+// pins
+#define PIN_LED             PB12
+#define PIN_GAMECUBE        PB13
+#define PIN_ROTATION        PA9
+#define PIN_DIRECTION       PB1
+#define PIN_NUNCHUCK_SCL    PB6
+#define PIN_NUNCHUCK_SDA    PB7
+#define PIN_GAMEPORT_X      PA0
+#define PIN_GAMEPORT_Y      PA1
+#define PIN_GAMEPORT_SLIDER PA2
+#define PIN_GAMEPORT_RX     PA3
+#define PIN_GAMEPORT_B1     PB3
+#define PIN_GAMEPORT_B2     PB4 // turn off debug!
+#define PIN_GAMEPORT_B3     PB5
+#define PIN_GAMEPORT_B4     PA8 
+#define PIN_SCREEN_DC       PB0
+#define PIN_SCREEN_RST      PB11
+#define PIN_SCREEN_MOSI     PA7
+#define PIN_SCREEN_SCK      PA5
+#define PIN_SCREEN_RESERVED_MISO PA6
+#define PIN_SCREEN_RESERVED_NSS  PA4
+#define PIN_BUTTON_UP       PB14
+#define PIN_BUTTON_DOWN     PB15
 
-#define DIRECTION_SWITCH_FORWARD LOW
+#define DIRECTION_SWITCH_FORWARD            LOW
 #define ROTATION_DETECTOR_CHANGE_TO_MONITOR FALLING 
 
 #define ROTATION_DETECTOR_ACTIVE_STATE ((ROTATION_DETECTOR_CHANGE_TO_MONITOR == FALLING) ? LOW : HIGH)
+
+#define EEPROM_VARIABLE_INJECTION_MODE 0
 
 typedef struct {
   int32_t speed;
@@ -39,32 +63,11 @@ uint8_t ellipticalRotationDetector = 0;
  
 const uint32_t watchdogSeconds = 10;
 
-#define MY_SCL PB6
-#define MY_SDA PB7
-
-const uint32_t indicatorLEDs[] = { PA0, PA1, PA2, PA3 };
-const uint8_t ledBrightnessLevels[] = {20,20,20,20}; 
-//const uint8_t ledBrightnessLevels[] = { 30, 30, 30, 150 }; // my PA3 LED is dimmer for some reason
-const int numIndicators = sizeof(indicatorLEDs)/sizeof(*indicatorLEDs);
-const uint32_t downButton = PA4;
-const uint32_t upButton = PA5;
-const uint32_t rotationDetector = PA7;
-const uint32_t directionSwitch = PA8; // TODO: change to PA9 with screen
-
-gpio_dev* const ledPort = GPIOB;
-const uint8_t ledPin = 12;
-const uint8_t ledPinID = PB12;
-
 const uint32_t saveInjectionModeAfterMillis = 15000ul; // only save a mode if it's been used 15 seconds; this saves flash
-
-const uint32_t gameCubePin = PA6;
 
 uint32_t injectionMode = 0;
 uint32_t savedInjectionMode = 0;
 uint32_t lastChangedModeTime;
-
-//volatile uint32 *gcPortPtr;
-//uint32_t gcPinBitmap;
 
 const uint16_t maskA = 0x01;
 const uint16_t maskB = 0x02;
