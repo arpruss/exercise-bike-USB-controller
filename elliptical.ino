@@ -16,8 +16,8 @@ volatile uint32_t ellipticalTriggerTime = 0;
 volatile uint32_t lastEllipticalPeriod = 0;
 volatile bool ellipticalPulsed = 0;
 
-Debouncer debounceRotation(rotationDetector, LOW);
-Debouncer debounceDirection(directionSwitch, DIRECTION_SWITCH_FORWARD);
+Debouncer debounceRotation(PIN_ROTATION, LOW);
+Debouncer debounceDirection(PIN_DIRECTION, DIRECTION_SWITCH_FORWARD);
 
 void ellipticalInterrupt() {
   uint32_t t = millis();
@@ -31,9 +31,9 @@ void ellipticalInterrupt() {
 
 void ellipticalInit() {
 #ifdef ENABLE_ELLIPTICAL
-  pinMode(rotationDetector, INPUT); //ARP
-  pinMode(directionSwitch, INPUT_PULLDOWN);
-  attachInterrupt(rotationDetector, ellipticalInterrupt, ROTATION_DETECTOR_CHANGE_TO_MONITOR);
+  pinMode(PIN_ROTATION, INPUT); //ARP
+  pinMode(PIN_DIRECTION, INPUT_PULLDOWN);
+  attachInterrupt(PIN_ROTATION, ellipticalInterrupt, ROTATION_DETECTOR_CHANGE_TO_MONITOR);
   debounceDirection.begin();
 #endif
   ellipticalRotationDetector = debounceRotation.getState();
@@ -71,7 +71,7 @@ void ellipticalUpdate(EllipticalData_t* data) {
       ellipticalSpeed = 800 * shortestReasonableRotationTime / dt;
     } 
   }
-  else if (ellipticalRotationDetector && dt >= 50 && ROTATION_DETECTOR_ACTIVE_STATE != digitalRead(rotationDetector)) {
+  else if (ellipticalRotationDetector && dt >= 50 && ROTATION_DETECTOR_ACTIVE_STATE == !rotationDetector.read()) {
       ellipticalRotationDetector = 0;
       updateLED();
   }

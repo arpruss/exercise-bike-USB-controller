@@ -1,4 +1,4 @@
-#include <EEPROM.h>
+#include "EEPROM.h"
 #include <flash_stm32.h>
 
 // This is a module that lets you store up to 255 byte-long configuration variables numbered from 0 to 254.
@@ -174,7 +174,7 @@ static void EEPROM8_reset(void) {
   }
 }
 
-static void EEPROM8_init(void) {
+void EEPROM8_init(void) {
 #ifdef SERIAL_DEBUG  
   Serial.println("EEPROM8 init");
 #endif

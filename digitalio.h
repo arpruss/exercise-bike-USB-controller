@@ -29,7 +29,7 @@ class DigitalOutput {
         *bsrr = resetMask;
     }
     
-    DigitalInput(unsigned pin) {
+    DigitalOutput(unsigned pin) {
       bsrr = &(digitalPinToPort(pin)->regs->BSRR);
       setMask = digitalPinToBitMask(pin);
       resetMask = setMask << 16;

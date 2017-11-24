@@ -1,15 +1,15 @@
 #ifndef _EXERCISE_CONTROLLER_H
 #define _EXERCISE_CONTROLLER_H
 
-#include "digitalinput.h"
+#include "digitalio.h"
 
 #ifdef USB_SERIAL
 # define SERIAL_DEBUG
 #endif
 
-#define ENABLE_NUNCHUCK
+//#define ENABLE_NUNCHUCK
 #define ENABLE_ELLIPTICAL
-#define ENABLE_GAMECUBE
+//#define ENABLE_GAMECUBE
 #define ENABLE_GAMEPORT
 
 // pins
@@ -43,12 +43,22 @@
 
 #define EEPROM_VARIABLE_INJECTION_MODE 0
 
+void displayInit();
+
+DigitalInput rotationDetector(PIN_ROTATION);
+DigitalOutput led(PIN_LED);
+Debouncer debounceDown(PIN_BUTTON_DOWN, HIGH);
+Debouncer debounceUp(PIN_BUTTON_UP, HIGH);
+
 typedef struct {
   int32_t speed;
   uint8_t direction;
   uint8_t valid;
 } EllipticalData_t;
 
+boolean EEPROM8_storeValue(uint8_t variable, uint8_t value);
+uint8_t EEPROM8_getValue(uint8_t variable);
+void EEPROM8_init(void);
 void ellipticalUpdate(EllipticalData_t* data);
 void ellipticalInit(void);
 
@@ -57,7 +67,7 @@ void updateLED(void);
 uint8_t loadInjectionMode(void);
 void saveInjectionMode(uint8_t mode);
 
-uint8_t validDevice = DEVICE_NONE;
+uint8_t validDevice = CONTROLLER_NONE;
 uint8_t validUSB = 0;
 uint8_t ellipticalRotationDetector = 0;
  
@@ -123,6 +133,7 @@ typedef struct {
   GameControllerDataProcessor_t stick;
   EllipticalProcessor_t elliptical;
   int32_t ellipticalMultiplier; // 64 = default speed ; higher is faster
+  const char* displayName;
 } Injector_t;
 
 #ifndef SERIAL_DEBUG
@@ -302,19 +313,19 @@ const InjectedButton_t dpadMC[numberOfButtons] = {
 };
 
 const Injector_t injectors[] = {
-  { defaultJoystickButtons, joystickUnifiedShoulder, ellipticalSliders, 64 },
-  { defaultJoystickButtons, joystickDualShoulder, ellipticalSliders, 40 },
-  { jetsetJoystickButtons, joystickNoShoulder, ellipticalSliders, 64 },
-  { dpadWASDButtons, NULL, ellipticalSliders, 64 },
-  { dpadArrowWithCTRL, NULL, ellipticalSliders, 64 },
-  { dpadArrowWithSpace, NULL, ellipticalSliders, 64 },  
-  { dpadQBert, NULL, ellipticalSliders, 64 },  
-  { dpadMC, NULL, ellipticalSliders, 64 },  
+  { defaultJoystickButtons, joystickUnifiedShoulder, ellipticalSliders, 64, "joystick (unified sli)" },
+  { defaultJoystickButtons, joystickDualShoulder, ellipticalSliders, 40, "joystick (2 sli), 64% rot" },
+  { jetsetJoystickButtons, joystickNoShoulder, ellipticalSliders, 64, "Jetset Radio joystick" },
+  { dpadWASDButtons, NULL, ellipticalSliders, 64, "WASD" },
+  { dpadArrowWithCTRL, NULL, ellipticalSliders, 64, "Arrows + Ctrl/Space" },
+  { dpadArrowWithSpace, NULL, ellipticalSliders, 64, "Arrows + Space/Back" },  
+  { dpadQBert, NULL, ellipticalSliders, 64, "QBert (A=1, B=2)" },  
+  { dpadMC, NULL, ellipticalSliders, 64, "Dance pad Minecraft" },  
 #ifdef ENABLE_ELLIPTICAL
-  { defaultJoystickButtons, joystickUnifiedShoulder, ellipticalSliders, 96 },  
-  { defaultJoystickButtons, joystickUnifiedShoulder, ellipticalSliders, 128 },  
+  { defaultJoystickButtons, joystickUnifiedShoulder, ellipticalSliders, 96, "joystick, 150% rot" },  
+  { defaultJoystickButtons, joystickUnifiedShoulder, ellipticalSliders, 128, "joystick, 200% rot" },  
 #endif
-  { dpadZX, NULL, ellipticalSliders, 64 }
+  { dpadZX, NULL, ellipticalSliders, 64, "Arrows + Z/X" }
 };
 
 #else // SERIAL_DEBUG

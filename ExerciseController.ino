@@ -57,9 +57,6 @@
 #include "GameControllers.h"
 #include "ExerciseController.h"
 
-DigitalOutput led(PIN_LED);
-Debouncer debounceDown(PIN_BUTTON_DOWN, HIGH);
-Debouncer debounceUp(PIN_BUTTON_UP, HIGH);
 #ifdef ENABLE_NUNCHUCK
 NunchuckController nunchuck = NunchuckController(PIN_NUNCHUCK_SCL,PIN_NUNCHUCK_SDA);
 #endif
@@ -78,6 +75,8 @@ void updateDisplay() {
 }
 
 void setup() {
+  afio_cfg_debug_ports(AFIO_DEBUG_SW_ONLY); // release PB3 and PB5 
+
   pinMode(PIN_BUTTON_DOWN, INPUT_PULLDOWN);
   pinMode(PIN_BUTTON_UP, INPUT_PULLDOWN);
   
@@ -117,7 +116,8 @@ void setup() {
     injectionMode = 0;
 
   savedInjectionMode = injectionMode;
-  
+
+  displayInit();
   updateDisplay();
 
   lastChangedModeTime = 0;
@@ -158,14 +158,12 @@ uint8_t receiveReport(GameControllerData_t* data) {
   }
 #endif
 #ifdef ENABLE_GAMEPORT
-    success = gamePort.read(data);
-    if (success) {
-      validDevice = CONTROLLER_GAMEPORT;
-      return 1;
-    }
+  success = gamePort.read(data);
+  if (success) {
+    validDevice = CONTROLLER_GAMEPORT;
+    return 1;
   }
 #endif
-
   validDevice = CONTROLLER_NONE;
 
   data->joystickX = 515;
