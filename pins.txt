@@ -1,10 +1,10 @@
 Tentative assignments not in the code
 
 Gamecube     - PB13
-Rotation     - PA7
-Direction    - PA8
+Rotation     - PA9
+Direction    - PB1
 Nunchuck SCL - PB6
 Nunchuck SDA - PB7
-Gameport     - analog PA0, PA1, PA2, PA3; digital PA5, PB3, PB4, PB5
-Screen       - PB0, PB1, PB11, PA6, PA4
+Gameport     - analog PA0, PA1, PA2, PA3; digital PA4, PA5, PA6, PA7
+Screen       - PB0, PB3, PB4, PB5, PA8
 Buttons      - PB14, PB15 // turn off debug
