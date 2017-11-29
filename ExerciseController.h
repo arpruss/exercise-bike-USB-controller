@@ -102,8 +102,8 @@ const uint16_t maskZ = 0x1000;
 const uint16_t maskShoulderRight = 0x2000;
 const uint16_t maskShoulderLeft = 0x4000;
 
-const uint8_t shoulderThreshold = 4;
-const uint8_t directionThreshold = 4*80;
+const int shoulderThreshold = 4;
+const int directionThreshold = 4*80;
 const uint16_t buttonMasks[] = { maskA, maskB, maskX, maskY, maskStart, maskDLeft, maskDRight, maskDDown, maskDUp, maskZ, maskShoulderRight, maskShoulderLeft };
 const int numberOfHardButtons = sizeof(buttonMasks)/sizeof(*buttonMasks);
 const uint16_t virtualShoulderRightPartial = numberOfHardButtons;

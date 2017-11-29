@@ -96,7 +96,7 @@ void setup() {
 #ifdef ENABLE_NUNCHUCK
   nunchuck.begin();
 #endif  
-#ifdef ENABLE_GAMECUBE
+#ifdef ENABLE_GAMEPORT
   gamePort.begin();
 #endif
 
@@ -199,7 +199,7 @@ void loop() {
   else {
     t0 = millis();
     do {
-      if (debounceDown.wasReleased()) {
+      if (debounceUp.wasReleased()) {
         if (injectionMode == 0)
           injectionMode = numInjectionModes-1;
         else
@@ -208,7 +208,7 @@ void loop() {
         displayInjector(injectionMode);
       }
       
-      if (debounceUp.wasPressed()) {
+      if (debounceDown.wasPressed()) {
         injectionMode = (injectionMode+1) % numInjectionModes;
         lastChangedModeTime = millis();
         displayInjector(injectionMode);
@@ -230,6 +230,9 @@ void loop() {
     savedInjectionMode = injectionMode;
   }
 
+  receiveReport(&data);
+  displayController(validDevice);
+
 #ifndef SERIAL_DEBUG
   if (!usb_is_connected(USBLIB) || !usb_is_configured(USBLIB)) {
     // we're disconnected; save power by not talking to controller
@@ -245,19 +248,16 @@ void loop() {
   validUSB = 1;
 #endif
 
-  receiveReport(&data);
 #ifdef SERIAL_DEBUG
   Serial.println("buttons1 = "+String(data.buttons,HEX));  
   Serial.println("joystick = "+String(data.joystickX)+","+String(data.joystickY));  
   Serial.println("c-stick = "+String(data.cX)+","+String(data.cY));  
-  Serial.println("shoulders = "+String(data.shoulderLeft)+","+String(data.shoulderRight));      
+  Serial.println("shoulders = "+String(data.shoulderLeft)+","+String(data.shoulderRight));       
 #else
 if (usb_is_connected(USBLIB) && usb_is_configured(USBLIB)) 
     inject(injectors + injectionMode, &data, &elliptical);
 #endif
 
-  displayController(validDevice);
-    
   updateLED();
 }
 

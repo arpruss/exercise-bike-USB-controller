@@ -10,8 +10,16 @@ bool didJoystick;
 const Injector_t* prevInjector = NULL;
 
 void buttonizeStick(uint8_t* buttons, uint16_t x, uint16_t y) {
-  uint8_t dx = x < 512 ? 512 - x : x - 512;
-  uint8_t dy = y < 512 ? 512 - y : y - 512;
+  int dx = x < 512 ? 512 - x : x - 512;
+  int dy = y < 512 ? 512 - y : y - 512;
+  
+/*  if (dx>directionThreshold || dy>directionThreshold) {
+    char msg[40];
+    sprintf(msg, "%u,%u %d,%d ", x,y,dx,dy);
+    display.display();
+    writeText(msg, 0,84, 0);
+  } */
+  
   if (dx > dy) {
       if(dx > directionThreshold) {
         if (x < 512) {
@@ -24,10 +32,10 @@ void buttonizeStick(uint8_t* buttons, uint16_t x, uint16_t y) {
   }
   else if (dx < dy && dy > directionThreshold) {
     if (y < 512) {
-      buttons[virtualDown] = 1;
+      buttons[virtualUp] = 1;
     }
     else {
-      buttons[virtualUp] = 1;
+      buttons[virtualDown] = 1;
     }
   }
 }
@@ -39,7 +47,8 @@ void toButtonArray(uint8_t* buttons, const GameControllerData_t* data) {
   buttons[virtualShoulderLeftPartial] = data->shoulderLeft>=shoulderThreshold;
   buttons[virtualLeft] = buttons[virtualRight] = buttons[virtualDown] = buttons[virtualUp] = 0;
   buttonizeStick(buttons, data->joystickX, data->joystickY);
-  buttonizeStick(buttons, data->cX, data->cY); 
+  if (data->device == CONTROLLER_GAMECUBE)
+    buttonizeStick(buttons, data->cX, data->cY); 
 }
 
 void joystickBasic(const GameControllerData_t* data) {
@@ -112,7 +121,7 @@ void ellipticalSliders(const GameControllerData_t* data, const EllipticalData_t*
     if (debounceDown.getRawState() && data->device == CONTROLLER_NUNCHUCK) {
       // useful for calibration and settings for games: when downButton is pressed, joystickY controls both sliders
       if (data->joystickY >= 512+4*40 || data->joystickY <= 512-4*40) {
-        int32_t delta = ((int32_t)data->joystickY - 512) * 49 / 40;
+        int32_t delta = (512 - (int32_t)data->joystickY) * 49 / 40;
         uint16_t out;
         if (delta <= -511)
           out = 0;
