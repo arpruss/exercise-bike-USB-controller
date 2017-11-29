@@ -84,14 +84,17 @@ void ellipticalUpdate(EllipticalData_t* data) {
       updateLED();
   }
 
+  data->speed = ellipticalSpeed;
+  data->direction = debounceDirection.getState();
   if (data->valid) {
-    displayRPM(dt < shortestReasonableRotationTime ? (60000 +  shortestReasonableRotationTime / 2) / shortestReasonableRotationTime : (60000 + dt / 2)/ dt);
+    int rpm = dt < shortestReasonableRotationTime ? (60000 +  shortestReasonableRotationTime / 2) / shortestReasonableRotationTime : (60000 + dt / 2)/ dt;
+    if (!data->direction)
+      rpm = -rpm;
+    displayRPM(rpm);
   }
   else {
     displayRPM(-1);
   }
-  data->speed = ellipticalSpeed;
-  data->direction = debounceDirection.getState();
 #ifdef SERIAL_DEBUG
 //  Serial.println("Speed "+String(data->speed));
 #endif    
