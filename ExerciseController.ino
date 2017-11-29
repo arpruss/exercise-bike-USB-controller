@@ -118,7 +118,7 @@ void setup() {
   savedInjectionMode = injectionMode;
 
   displayInit();
-  updateDisplay();
+  displayInjector(injectionMode);
 
   lastChangedModeTime = 0;
   iwdg_init(IWDG_PRE_256, watchdogSeconds*156);
@@ -205,13 +205,13 @@ void loop() {
         else
           injectionMode--;
         lastChangedModeTime = millis();
-        updateDisplay();
+        displayInjector(injectionMode);
       }
       
       if (debounceUp.wasPressed()) {
         injectionMode = (injectionMode+1) % numInjectionModes;
         lastChangedModeTime = millis();
-        updateDisplay();
+        displayInjector(injectionMode);
   #ifdef SERIAL_DEBUG      
         Serial.println("Changed to "+String(injectionMode));
   #endif
@@ -255,6 +255,8 @@ void loop() {
 if (usb_is_connected(USBLIB) && usb_is_configured(USBLIB)) 
     inject(injectors + injectionMode, &data, &elliptical);
 #endif
+
+  displayController(validDevice);
     
   updateLED();
 }

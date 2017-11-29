@@ -12,6 +12,14 @@
 //#define ENABLE_GAMECUBE
 #define ENABLE_GAMEPORT
 
+const char* controllerNames[] = {
+  "none",
+  "GameCube",
+  "Nunchuck",
+  "PC Joy"
+};
+static const int numControllers = (sizeof(controllerNames)/sizeof(*controllerNames));
+
 // pins
 #define PIN_LED             PB12
 #define PIN_GAMECUBE        PB13
@@ -19,14 +27,14 @@
 #define PIN_DIRECTION       PB1
 #define PIN_NUNCHUCK_SCL    PB6
 #define PIN_NUNCHUCK_SDA    PB7
-#define PIN_GAMEPORT_X      PA0
-#define PIN_GAMEPORT_Y      PA1
-#define PIN_GAMEPORT_SLIDER PA2
-#define PIN_GAMEPORT_RX     PA3
-#define PIN_GAMEPORT_B1     PB3
-#define PIN_GAMEPORT_B2     PB4 // turn off debug!
-#define PIN_GAMEPORT_B3     PB5
-#define PIN_GAMEPORT_B4     PA8 
+#define PIN_GAMEPORT_X      PA0 // Gameport 3
+#define PIN_GAMEPORT_Y      PA1 // Gameport 6
+#define PIN_GAMEPORT_SLIDER PA2 // Gameport 13
+#define PIN_GAMEPORT_RX     PA3 // Gameport 11
+#define PIN_GAMEPORT_B1     PB3 // Gameport 2
+#define PIN_GAMEPORT_B2     PB4 // Gameport 7 // turn off debug!
+#define PIN_GAMEPORT_B3     PB5 // Gameport 10
+#define PIN_GAMEPORT_B4     PA8 // Gameport 14
 #define PIN_SCREEN_DC       PB0
 #define PIN_SCREEN_RST      PB11
 #define PIN_SCREEN_MOSI     PA7
@@ -44,7 +52,9 @@
 #define EEPROM_VARIABLE_INJECTION_MODE 0
 
 void displayInit();
-
+void displayController(int i);
+void displayRPM(int rpm);
+void displayInjector(int i);
 DigitalInput rotationDetector(PIN_ROTATION);
 DigitalOutput led(PIN_LED);
 Debouncer debounceDown(PIN_BUTTON_DOWN, HIGH);
@@ -329,7 +339,18 @@ const Injector_t injectors[] = {
 };
 
 #else // SERIAL_DEBUG
-const Injector_t injectors[] = { {NULL,NULL},{NULL,NULL},{NULL,NULL},{NULL,NULL},{NULL,NULL},{NULL,NULL},{NULL,NULL},{NULL,NULL} };
+const Injector_t injectors[] = { {NULL,NULL,NULL,0,"Test 1"},
+                                 {NULL,NULL,NULL,0,"Test 2"},
+                                 {NULL,NULL,NULL,0,"Test 3"},
+                                 {NULL,NULL,NULL,0,"Test 4"},
+                                 {NULL,NULL,NULL,0,"Test 5"},
+                                 {NULL,NULL,NULL,0,"Test 6"},
+                                 {NULL,NULL,NULL,0,"Test 7"},
+                                 {NULL,NULL,NULL,0,"Test 8"},
+                                 {NULL,NULL,NULL,0,"Test 9"},
+                                 {NULL,NULL,NULL,0,"Test 10"},
+                                 {NULL,NULL,NULL,0,"Test 11"},
+                                 {NULL,NULL,NULL,0,"Test 12"} };
 #endif
 
 const uint32_t numInjectionModes = sizeof(injectors)/sizeof(*injectors);

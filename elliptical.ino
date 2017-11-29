@@ -6,10 +6,10 @@
 #define MAX_USABLE_RPM      300
 #define SLOWEST_REASONABLE_RPM 5
 
-const uint32_t turnOffSliderTime = 10000l;
-const uint32_t shortestReasonableRotationTime = 1000l * 60 / BEST_REASONABLE_RPM;
-const uint32_t shortestAllowedRotationTime = 1000l * 60 / MAX_USABLE_RPM;
-const uint32_t longestReasonableRotationTime = 1000l * 60 / SLOWEST_REASONABLE_RPM;
+const uint32_t turnOffSliderTime = 10000;
+const uint32_t shortestReasonableRotationTime = 1000 * 60 / BEST_REASONABLE_RPM;
+const uint32_t shortestAllowedRotationTime = 1000 * 60 / MAX_USABLE_RPM;
+const uint32_t longestReasonableRotationTime = 1000 * 60 / SLOWEST_REASONABLE_RPM;
 uint32_t lastPulse = 0;
 int32_t ellipticalSpeed;
 volatile uint32_t ellipticalTriggerTime = 0;
@@ -46,8 +46,9 @@ void ellipticalUpdate(EllipticalData_t* data) {
 
   if (dt > longestReasonableRotationTime) {
     ellipticalSpeed = 0;
-    if (dt > turnOffSliderTime)
+    if (dt > turnOffSliderTime) {
       data->valid = false;
+    }
   }
   else if ( 800 * shortestReasonableRotationTime < dt * ellipticalSpeed) {
     ellipticalSpeed = 800 * shortestReasonableRotationTime / dt;
@@ -75,7 +76,13 @@ void ellipticalUpdate(EllipticalData_t* data) {
       ellipticalRotationDetector = 0;
       updateLED();
   }
-  
+
+  if (data->valid) {
+    displayRPM(dt < shortestReasonableRotationTime ? (60000 +  shortestReasonableRotationTime / 2) / shortestReasonableRotationTime : (60000 + dt / 2)/ dt);
+  }
+  else {
+    displayRPM(-1);
+  }
   data->speed = ellipticalSpeed;
   data->direction = debounceDirection.getState();
 #ifdef SERIAL_DEBUG
