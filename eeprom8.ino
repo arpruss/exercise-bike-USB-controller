@@ -1,5 +1,21 @@
-#include "EEPROM.h"
+#include <EEPROM.h>
 #include <flash_stm32.h>
+
+#ifndef EEPROM_PAGE_SIZE
+#define EEPROM_PAGE_SIZE 0x400
+#endif
+
+#ifndef EEPROM_START_ADDRESS  
+#define EEPROM_START_ADDRESS ((uint32)(0x8000000 + 128 * 1024 - 2 * EEPROM_PAGE_SIZE))
+#endif 
+
+#ifndef EEPROM_PAGE0_BASE
+#define EEPROM_PAGE0_BASE   ((uint32)(EEPROM_START_ADDRESS + 0x000))
+#endif
+
+#ifndef EEPROM_PAGE1_BASE
+#define EEPROM_PAGE1_BASE   ((uint32)(EEPROM_START_ADDRESS + EEPROM_PAGE_SIZE))
+#endif
 
 // This is a module that lets you store up to 255 byte-long configuration variables numbered from 0 to 254.
 //
@@ -9,7 +25,7 @@
 // Note: Flash storage is rated for 10K cycles.
 // There are 5020 half-words (16-bit entities) available per page, making for about 10M cycles.
 // Worst case scenario (and very unrealistic) is when GameCubeController's configuration changes every 15 seconds.
-// This will result in 4.25 years of operation. 
+// This will result in 4.25 years of constant operation. 
 // That should be good enough.
 
 static boolean invalid = true;
@@ -28,9 +44,6 @@ static bool erasePage(uint32_t base) {
   bool success;
 
   if (base != EEPROM_PAGE0_BASE && base != EEPROM_PAGE1_BASE) {
-#ifdef SERIAL_DEBUG
-    Serial.println("Out of range erase at "+String(base,HEX));
-#endif
     return false;
   }
 
@@ -38,10 +51,6 @@ static bool erasePage(uint32_t base) {
   
   success = ( FLASH_COMPLETE == FLASH_ErasePage(base) );
   
-#ifdef SERIAL_DEBUG
-    Serial.println("Erasing "+String(base,HEX));
-#endif
-
   success = success && 
     FLASH_COMPLETE == FLASH_ProgramHalfWord(base, (uint16_t)EEPROM8_MAGIC) &&
     FLASH_COMPLETE == FLASH_ProgramHalfWord(base+2, (uint16_t)(EEPROM8_MAGIC>>16));
@@ -61,31 +70,19 @@ uint8_t EEPROM8_getValue(uint8_t variable) {
   uint32_t base = pageBases[currentPage];
   for (uint32_t offset = EEPROM_PAGE_SIZE-2 ; offset >= 4 ; offset-=2) {
     if (GET_BYTE(base+offset) == variable) {
-#ifdef SERIAL_DEBUG
-      Serial.println("Fetched "+String(variable,HEX)+" from "+String(base+offset,HEX)+" as "+String(GET_BYTE(base+offset+1),HEX));
-#endif
       return GET_BYTE(base+offset+1);
     }
   }
 
-#ifdef SERIAL_DEBUG
-  Serial.println("Couldn't find "+String(variable,HEX));
-#endif
   return -1;
 }
 
 static bool writeHalfWord(uint32_t address, uint16_t halfWord) {
   if (! ( EEPROM_PAGE0_BASE <= address && address+1 < EEPROM_PAGE0_BASE + EEPROM_PAGE_SIZE ) &&
      ! ( EEPROM_PAGE1_BASE <= address && address+1 < EEPROM_PAGE1_BASE + EEPROM_PAGE_SIZE ) ) {
-#ifdef SERIAL_DEBUG
-    Serial.println("Out of range write at "+String(address,HEX));
-#endif
     return false;
   }
   
-#ifdef SERIAL_DEBUG
-//    Serial.println("Writing "+String(halfWord,HEX)+" at "+String(address,HEX));
-#endif
   FLASH_Unlock();
   boolean success = FLASH_COMPLETE == FLASH_ProgramHalfWord(address, halfWord);
   FLASH_Lock();  
@@ -94,9 +91,6 @@ static bool writeHalfWord(uint32_t address, uint16_t halfWord) {
 }
 
 boolean EEPROM8_storeValue(uint8_t variable, uint8_t value) {
-#ifdef SERIAL_DEBUG
-  if (invalid) Serial.println("Invalid");
-#endif
   if (invalid)
     return false;
 
@@ -108,16 +102,9 @@ boolean EEPROM8_storeValue(uint8_t variable, uint8_t value) {
   
   for (uint32_t offset = 4 ; offset < EEPROM_PAGE_SIZE ; offset+=2) {
     if (GET_HALF_WORD(base+offset) == 0xFFFF) {
-#ifdef SERIAL_DEBUG
-//      Serial.println("Storing "+String(variable,HEX)+" at "+String(base+offset,HEX)+" with value "+String(value,HEX)+" "+String(variable | ((uint16_t)value<<8),HEX));
-#endif
       return writeHalfWord(base+offset, variable | ((uint16_t)value<<8));
     }
   }
-
-#ifdef SERIAL_DEBUG  
-  Serial.println("Did not find space on page "+String(base,HEX));
-#endif
 
   uint32_t otherBase = pageBases[1-currentPage];
   // page is full, need to move to other page
@@ -145,9 +132,6 @@ boolean EEPROM8_storeValue(uint8_t variable, uint8_t value) {
       }
       if (j == outOffset) {
         // we don't yet have a value for this variable
-#ifdef SERIAL_DEBUG
-        Serial.println("Updating "+String(variable,HEX)+" to "+String(data>>8));
-#endif
         if (writeHalfWord(otherBase+outOffset,data))
           outOffset += 2;
         else
@@ -175,9 +159,6 @@ static void EEPROM8_reset(void) {
 }
 
 void EEPROM8_init(void) {
-#ifdef SERIAL_DEBUG  
-  Serial.println("EEPROM8 init");
-#endif
   if (EEPROM8_MAGIC != GET_WORD(EEPROM_PAGE0_BASE) && ! erasePage(EEPROM_PAGE0_BASE) ) {
     invalid = true;
     return;
@@ -195,9 +176,6 @@ void EEPROM8_init(void) {
   else { // both pages are blank
     currentPage = 1;
   }
-#ifdef SERIAL_DEBUG
-  Serial.println("current page "+String(currentPage));
-#endif
   invalid = false;
 }
 

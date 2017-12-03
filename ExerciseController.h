@@ -1,6 +1,11 @@
 #ifndef _EXERCISE_CONTROLLER_H
 #define _EXERCISE_CONTROLLER_H
 
+#include <KeyboardMouseJoystick.h>
+#ifdef USB_KMJ
+# undef USB_SERIAL
+#endif
+
 #include "digitalio.h"
 
 #ifdef USB_SERIAL
