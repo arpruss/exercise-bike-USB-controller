@@ -91,6 +91,12 @@ void joystickPOV(const GameControllerData_t* data) {
     Joystick.hat(dir);
 }
 
+void directionSwitchSlider(const GameControllerData_t* data, const EllipticalData_t* ellipticalP, int32_t multiplier) {
+    if (ellipticalP->direction)
+      Joystick.sliderRight(1023);
+  }
+
+
 uint16_t getEllipticalSpeed(const EllipticalData_t* ellipticalP, int32_t multiplier) {
   if (multiplier == 0) {
     if (ellipticalP->speed == 0)
